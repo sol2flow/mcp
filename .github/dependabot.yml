@@ -12,6 +12,15 @@ updates:
       dev-tools:
         dependency-type: development
         exclude-patterns: ['@modelcontextprotocol/*', 'zod', 'pino', '@sentry/*']
+        # majors come one per pull request, so one that breaks doesn't hold back the rest
+        update-types: [minor, patch]
+    ignore:
+      # follow the Node version the package supports (engines, .nvmrc), not the newest
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # TypeScript 7 (the native compiler): not yet supported by openapi-typescript and typescript-eslint
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
@@ -20,3 +29,7 @@ updates:
     directory: /
     schedule: { interval: weekly }
     commit-message: { prefix: chore, include: scope }
+    ignore:
+      # the image stays on the Node line CI tests (.nvmrc); move to the next LTS on purpose, everywhere at once
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
