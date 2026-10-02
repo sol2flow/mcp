@@ -40,8 +40,10 @@ export const whoami = defineTool({
 function keyLine(m: Me) {
   const k = m.api_key;
   if (!k) return 'API key: details need sol2flow 1.8 or later.';
+  // the app sends `sf_<prefix>`; tolerate the bare prefix too
+  const prefix = k.prefix.startsWith('sf_') ? k.prefix : `sf_${k.prefix}`;
   return (
-    `API key "${k.name}" (sf_${k.prefix}…): ${k.scope === 'read' ? 'read-only' : 'full access'}, ` +
+    `API key "${k.name}" (${prefix}…): ${k.scope === 'read' ? 'read-only' : 'full access'}, ` +
     `${k.expires_at ? `expires ${date(k.expires_at)}` : 'never expires'}.`
   );
 }

@@ -402,7 +402,7 @@ export class FakeApi {
           created_at: NOW,
           time_zone: 'Europe/Berlin',
           ...(this.version && this.version >= '1.8.0'
-            ? { api_key: { name: 'Test key', prefix: key.slice(3, 11), scope: this.keyScope[key], expires_at: null } }
+            ? { api_key: { name: 'Test key', prefix: key.slice(0, 11), scope: this.keyScope[key], expires_at: null } }
             : {}),
         }),
       },

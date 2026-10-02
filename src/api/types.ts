@@ -3,7 +3,7 @@ import type { components } from './openapi.js';
 /** The API's response shapes (src/api/openapi.d.ts, generated from the vendored OpenAPI snapshot). */
 type S = components['schemas'];
 
-/** The key used for the request: `GET /me` → `api_key` since API 1.8.0 (absent before). */
+/** The key used for the request: `GET /me` → `api_key` since API 1.8.0 (absent before); `prefix` is `sf_<prefix>`. */
 export type ApiKeyInfo = { name: string; prefix: string; scope: 'full' | 'read'; expires_at: string | null };
 export type Me = S['Me'] & { api_key?: ApiKeyInfo };
 export type Workspace = S['Workspace'];
