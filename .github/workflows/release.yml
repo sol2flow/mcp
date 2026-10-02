@@ -4,8 +4,7 @@ name: Release
 # main (every push or merge): the same checks, then semantic-release (.releaserc.json) computes the next version from
 # the Conventional Commits since the last tag and, if any commit releases, publishes @sol2flow/mcp to npm, tags vX.Y.Z
 # and creates the GitHub release with its notes. Then the image (amd64 + arm64) is pushed to ghcr.io/sol2flow/mcp as
-# :X.Y.Z, :X.Y, :X and :latest (and :edge / :sha-… once the repository is public), and the deploy job asks the
-# server to update (DEVELOPMENT.md → Releases, Deployment).
+# :X.Y.Z, :X.Y, :X and :latest (and :edge / :sha-… once the repository is public) (DEVELOPMENT.md → Releases).
 # One workflow on purpose: tags created with the GITHUB_TOKEN don't trigger other workflows.
 on:
   push:
@@ -97,10 +96,6 @@ jobs:
         (!github.event.repository.private || needs.release.outputs.released == 'true')))
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }
-    outputs:
-      image: ${{ env.IMAGE }}
-      version: ${{ needs.release.outputs.version }}
-      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -145,75 +140,3 @@ jobs:
             APP_VERSION=${{ needs.release.outputs.version || 'edge' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
-
-  # Deployment (DEVELOPMENT.md → Deployment): after a release has pushed the versioned image, join the Headscale tailnet
-  # and send an empty POST to the deploy webhook. Without HEADSCALE_URL, HEADSCALE_AUTHKEY or DEPLOY_WEBHOOK_URL the
-  # job only prints a notice; a webhook that still fails after the retries fails the job (the image is pushed either
-  # way). Repository secrets, no environment: environment secrets need a paid plan in a private repository.
-  deploy:
-    needs: [release, image]
-    # Off until the repository variable DEPLOY_ENABLED is set to "true" (Settings → Secrets and variables → Actions →
-    # Variables); the release and the image are unaffected.
-    if: >-
-      vars.DEPLOY_ENABLED == 'true' &&
-      !cancelled() && needs.image.result == 'success' && github.event_name != 'pull_request' &&
-      github.ref_name == github.event.repository.default_branch &&
-      needs.release.outputs.released == 'true' && needs.image.outputs.digest != ''
-    runs-on: ubuntu-latest
-    permissions: {}
-    concurrency:
-      group: deploy-${{ github.repository }}
-      cancel-in-progress: false
-    timeout-minutes: 15
-    env:
-      HEADSCALE_URL: ${{ vars.HEADSCALE_URL || secrets.HEADSCALE_URL }}
-    steps:
-      - id: config
-        env:
-          AUTHKEY: ${{ secrets.HEADSCALE_AUTHKEY }}
-          WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-        run: |
-          missing=""
-          if [ -z "$HEADSCALE_URL" ]; then missing="$missing HEADSCALE_URL"; fi
-          if [ -z "$AUTHKEY" ]; then missing="$missing HEADSCALE_AUTHKEY"; fi
-          if [ -z "$WEBHOOK" ]; then missing="$missing DEPLOY_WEBHOOK_URL"; fi
-          if [ -n "$missing" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Not deployed::Not set:$missing (DEVELOPMENT.md → Deployment). The image is pushed."
-            echo "Not deployed: not set:$missing" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          fi
-      - if: steps.config.outputs.enabled == 'true'
-        uses: tailscale/github-action@v4
-        with:
-          authkey: ${{ secrets.HEADSCALE_AUTHKEY }}
-          args: --login-server=${{ env.HEADSCALE_URL }}
-          hostname: gha-${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_attempt }}
-      # an empty POST (Content-Length: 0); only the webhook's host is printed, never the URL
-      - if: steps.config.outputs.enabled == 'true'
-        env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-          IMAGE: ${{ needs.image.outputs.image }}
-          VERSION: ${{ needs.image.outputs.version }}
-          DIGEST: ${{ needs.image.outputs.digest }}
-        run: |
-          host=$(printf '%s' "$DEPLOY_WEBHOOK_URL" | sed -E 's#^[A-Za-z][A-Za-z0-9+.-]*://##; s#^[^/@]*@##; s#[/?\#].*$##')
-          echo "Deploying $IMAGE:$VERSION@$DIGEST: POST to $host"
-          response="$RUNNER_TEMP/deploy-response"
-          : > "$response"
-          status=0
-          code=$(curl -X POST --data-binary '' --header 'Content-Type:' --silent --show-error --fail-with-body \
-            --retry 5 --retry-all-errors --retry-delay 5 --max-time 30 \
-            --output "$response" --write-out '%{http_code}' "$DEPLOY_WEBHOOK_URL") || status=$?
-          if [ -s "$response" ]; then
-            echo "Response (HTTP $code):"
-            head -c 2000 "$response"
-            echo
-          fi
-          if [ "$status" -ne 0 ]; then
-            echo "::error::The deploy webhook on $host failed after the retries (curl exit $status, HTTP $code). The image is pushed: re-run this job or deploy by hand."
-            exit 1
-          fi
-          echo "Deploy requested on $host (HTTP $code)"
-          echo "Deploy of $VERSION requested on $host (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
