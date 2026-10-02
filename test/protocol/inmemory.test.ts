@@ -60,6 +60,25 @@ describe('tools/list', () => {
 });
 
 describe('tool calls', () => {
+  it('search across workspaces reports one that refuses the key instead of failing', async () => {
+    fake.workspaces.push({ id: crypto.randomUUID(), slug: 'beta', name: 'Beta', members: ['ana'] });
+    fake.inject.set('GET /workspaces/beta/search', {
+      status: 403,
+      body: { error: { code: 'api_disabled_workspace', message: 'API access is switched off for this workspace.' } },
+    });
+    const c = await connect(fake);
+    try {
+      const r = await c.call('search', { query: 'PRD-2' });
+      expect(r.isError).toBe(false);
+      expect(r.text).toContain('# acme\n## Tasks\n- **PRD-2**');
+      expect(r.text).toContain('# beta\n_Not searched: API access is switched off for this workspace._');
+    } finally {
+      await c.close();
+      fake.inject.clear();
+      fake.workspaces.splice(1);
+    }
+  });
+
   it('whoami shows the key and the version (1.8) or says it needs 1.8', async () => {
     let c = await connect(fake);
     let r = await c.call('whoami');

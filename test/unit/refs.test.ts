@@ -107,6 +107,28 @@ describe('workspaces', () => {
     fake.workspaces.push({ id: crypto.randomUUID(), slug: 'beta', name: 'Beta', members: ['ana'] });
     await expect(workspaceSlug(ctx())).rejects.toThrow(/You are in 2 workspaces \(acme, beta\): pass `workspace`/);
   });
+
+  it('looks a key up in the other workspaces when one refuses the key (API access off, plan)', async () => {
+    fake.workspaces.push({ id: crypto.randomUUID(), slug: 'beta', name: 'Beta', members: ['ana'] });
+    const off = {
+      status: 403,
+      body: { error: { code: 'api_disabled_workspace', message: 'API access is switched off for this workspace.' } },
+    };
+    fake.inject.set('GET /workspaces/beta/search', off);
+    try {
+      expect((await resolveTask(ctx(), 'PRD-2')).id).toBe(fake.task('PRD-2').id);
+      clearCache();
+      await expect(resolveTask(ctx(), 'PRD-99')).rejects.toThrow(
+        /^No task PRD-99 in your workspaces, .+ Not looked in: beta \(API access is switched off for this workspace\)\.$/,
+      );
+      // refused everywhere: that refusal
+      fake.inject.set('GET /workspaces/acme/search', off);
+      clearCache();
+      await expect(resolveTask(ctx(), 'PRD-2')).rejects.toMatchObject({ code: 'api_disabled_workspace' });
+    } finally {
+      fake.inject.clear();
+    }
+  });
 });
 
 describe('boards and people', () => {

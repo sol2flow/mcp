@@ -10,6 +10,7 @@ import {
   resolveList,
   resolveTask,
   resolveUsers,
+  workspaceRefused,
   workspaceSlug,
   workspaceSlugById,
 } from '../resolve/refs.js';
@@ -58,16 +59,27 @@ export const search = defineTool({
   async run(ctx, a) {
     const chosen = a.workspace ?? ctx.defaultWorkspace;
     const slugs = chosen ? [chosen] : (await workspaces(ctx)).map((w) => w.slug).slice(0, 10);
+    // with several workspaces, one that refuses the key (API access off, plan) is reported, not fatal
     const results = await Promise.all(
-      slugs.map(async (slug) => ({
-        workspace: slug,
-        ...(await ctx.api.call<SearchResult>('search', { params: { slug }, query: { q: a.query } })),
-      })),
+      slugs.map(async (slug) => {
+        try {
+          return {
+            workspace: slug,
+            ...(await ctx.api.call<SearchResult>('search', { params: { slug }, query: { q: a.query } })),
+          };
+        } catch (e) {
+          if (slugs.length > 1 && workspaceRefused(e)) return { workspace: slug, error: e.message };
+          throw e;
+        }
+      }),
     );
     return render(a.response_format, slugs.length === 1 ? results[0] : results, () =>
-      slugs.length === 1
-        ? searchView(results[0]!, a.query)
-        : results.map((r) => `# ${r.workspace}\n${searchView(r, a.query)}`).join('\n\n'),
+      results
+        .map((r) => {
+          const body = 'error' in r ? `_Not searched: ${r.error}_` : searchView(r, a.query);
+          return slugs.length === 1 ? body : `# ${r.workspace}\n${body}`;
+        })
+        .join('\n\n'),
     );
   },
 });

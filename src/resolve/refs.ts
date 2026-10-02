@@ -1,4 +1,4 @@
-import { ToolError } from '../api/errors.js';
+import { ApiError, ToolError } from '../api/errors.js';
 import type {
   BoardDetail,
   Board,
@@ -87,7 +87,18 @@ async function cached<T>(ctx: ToolContext, key: string, f: () => Promise<T | nul
   return v;
 }
 
-/** In each candidate workspace (in parallel), the first non-null answer; several workspaces answering: ambiguous. */
+/**
+ * A workspace that refuses this key outright (its API access switched off, its plan, gone or not visible): with several
+ * candidates it is skipped, so one such workspace doesn't break lookups in the others.
+ */
+export const workspaceRefused = (e: unknown): e is ApiError =>
+  e instanceof ApiError && (e.status === 403 || e.status === 404) && !e.unknownEndpoint;
+
+/**
+ * In each candidate workspace (in parallel), the first non-null answer; several workspaces answering: ambiguous. A
+ * workspace that refuses the key is skipped when there are others (and named if nothing is found); refused by all: that
+ * refusal.
+ */
 async function acrossWorkspaces<T>(
   ctx: ToolContext,
   explicit: string | undefined,
@@ -96,17 +107,30 @@ async function acrossWorkspaces<T>(
 ): Promise<{ slug: string; value: T }> {
   const slugs = await workspaceCandidates(ctx, explicit);
   if (slugs.length > MAX_WORKSPACE_FANOUT) await workspaceSlug(ctx, explicit); // throws: too many to search
-  const found: { slug: string; value: T }[] = [];
-  for (const r of await Promise.all(slugs.map(async (slug) => ({ slug, value: await f(slug) }))))
-    if (r.value !== null) found.push({ slug: r.slug, value: r.value });
+  const results = await Promise.all(
+    slugs.map(async (slug) => {
+      try {
+        return { slug, value: await f(slug) };
+      } catch (e) {
+        if (slugs.length > 1 && workspaceRefused(e)) return { slug, value: null, refused: e };
+        throw e;
+      }
+    }),
+  );
+  const found = results.flatMap((r) => (r.value !== null ? [{ slug: r.slug, value: r.value }] : []));
   if (found.length === 1) return found[0]!;
-  if (!found.length)
+  if (found.length > 1)
     throw new ToolError(
-      `No ${what}${slugs.length === 1 ? ` in workspace ${slugs[0]}` : ' in your workspaces'}, or you have no access to it. ` +
-        `Use search to find it.`,
+      `${what} exists in several workspaces (${found.map((r) => r.slug).join(', ')}): pass \`workspace\`.`,
     );
+  const refused = results.flatMap((r) => ('refused' in r && r.refused ? [{ slug: r.slug, e: r.refused }] : []));
+  if (refused.length && refused.length === results.length) throw refused[0]!.e;
   throw new ToolError(
-    `${what} exists in several workspaces (${found.map((r) => r.slug).join(', ')}): pass \`workspace\`.`,
+    `No ${what}${slugs.length === 1 ? ` in workspace ${slugs[0]}` : ' in your workspaces'}, or you have no access to it. ` +
+      `Use search to find it.` +
+      (refused.length
+        ? ` Not looked in: ${refused.map((r) => `${r.slug} (${r.e.message.replace(/\.$/, '')})`).join('; ')}.`
+        : ''),
   );
 }
 
