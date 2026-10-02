@@ -9,7 +9,7 @@
 # Multi-platform without emulation: the build stage runs on the build machine's platform ($BUILDPLATFORM; the bundle
 # is plain JavaScript), and the runtime stage has no RUN step, so an arm64 image needs no QEMU.
 
-FROM --platform=$BUILDPLATFORM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine AS build
 WORKDIR /src
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false NPM_CONFIG_FUND=false NPM_CONFIG_AUDIT=false
 COPY package.json package-lock.json ./
@@ -22,7 +22,7 @@ RUN APP_VERSION="$APP_VERSION" npm run build \
  && mkdir -p /out/app /out/data/logs \
  && cp dist/index.js dist/sentry-sdk.js LICENSE THIRD-PARTY-NOTICES.md /out/app/
 
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 ARG APP_VERSION=dev
 LABEL org.opencontainers.image.title="sol2flow MCP server" \
       org.opencontainers.image.description="Lets AI assistants work with sol2flow tasks through its REST API (Model Context Protocol, Streamable HTTP)" \
