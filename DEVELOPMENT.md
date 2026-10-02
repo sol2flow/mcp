@@ -79,10 +79,13 @@ Every push to `main` releases automatically (semantic-release, `.releaserc.json`
 last tag decide the version (`feat` minor, `fix`/`docs`/`perf`/`refactor`/`style` patch, `!` major — minor while 0.x;
 `chore`/`ci`/`test`/`build` none). A release publishes `@sol2flow/mcp` to npm (`NPM_TOKEN`; with provenance once the
 repository is public), tags `vX.Y.Z`, creates the GitHub release (the changelog), pushes the image as `:X.Y.Z`, `:X.Y`,
-`:X` and `:latest`, and deploys.
+`:X` and `:latest`, and deploys (when enabled, see Deployment).
 
 ## Deployment
 
 After a release has pushed the image, the `deploy` job joins the Headscale tailnet (`HEADSCALE_URL`,
 `HEADSCALE_AUTHKEY`) and sends an empty POST to `DEPLOY_WEBHOOK_URL`, which updates the stack. Without these settings
 the job only prints a notice.
+
+The job is off until the repository variable `DEPLOY_ENABLED` is `true`; until then a release only publishes the
+package and the image.

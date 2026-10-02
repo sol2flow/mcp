@@ -152,7 +152,10 @@ jobs:
   # way). Repository secrets, no environment: environment secrets need a paid plan in a private repository.
   deploy:
     needs: [release, image]
+    # Off until the repository variable DEPLOY_ENABLED is set to "true" (Settings → Secrets and variables → Actions →
+    # Variables); the release and the image are unaffected.
     if: >-
+      vars.DEPLOY_ENABLED == 'true' &&
       !cancelled() && needs.image.result == 'success' && github.event_name != 'pull_request' &&
       github.ref_name == github.event.repository.default_branch &&
       needs.release.outputs.released == 'true' && needs.image.outputs.digest != ''
