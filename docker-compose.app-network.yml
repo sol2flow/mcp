@@ -1,0 +1,10 @@
+# Joins the sol2flow app's dev network while it exists (the Makefile adds this file then), so the server reaches the
+# app at http://app:3000.
+services:
+  dev:
+    networks: [default, app]
+
+networks:
+  app:
+    name: ${SOL2FLOW_APP_NETWORK:-sol2flow-dev_default}
+    external: true

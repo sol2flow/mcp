@@ -1,0 +1,22 @@
+# Dependencies (a Docker volume in development)
+node_modules
+
+# Build output
+/dist
+*.tsbuildinfo
+*.tgz
+
+# Local environment (never commit secrets)
+.env
+.env.*
+
+# Test output, logs
+/coverage
+/test/integration/.run
+.tmp*
+*.log
+
+# OS / editors
+.DS_Store
+.idea
+.vscode/*

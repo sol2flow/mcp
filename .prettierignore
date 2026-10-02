@@ -1,0 +1,9 @@
+# Prettier also skips everything in .gitignore (node_modules, dist, …); listed here for clarity.
+node_modules
+/dist
+package-lock.json
+
+# Generated: the vendored OpenAPI snapshot and the types made from it (make openapi-sync)
+/openapi
+/src/api/openapi.d.ts
+/THIRD-PARTY-NOTICES.md

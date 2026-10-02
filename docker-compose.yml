@@ -1,0 +1,24 @@
+# Local development for the sol2flow MCP server. Everything runs in containers: the host needs only Docker and Make.
+# Ports: 3005 (make dev: the server in HTTP mode), 6274 / 6277 (make inspector), clear of the app's dev stack (3000, 5432,
+# 8025, 5555), the docs (3002, 3003, 8080) and the website (3004, 8081).
+name: sol2flow-mcp
+
+services:
+  dev:
+    image: node:22-alpine
+    working_dir: /mcp
+    environment:
+      NPM_CONFIG_UPDATE_NOTIFIER: 'false'
+      NPM_CONFIG_FUND: 'false'
+      NPM_CONFIG_AUDIT: 'false'
+      # the app as reachable from this container (docker-compose.app-network.yml joins the app's dev network)
+      SOL2FLOW_URL: ${SOL2FLOW_URL:-http://app:3000}
+      SOL2FLOW_API_KEY: ${SOL2FLOW_API_KEY:-}
+      SOL2FLOW_WORKSPACE: ${SOL2FLOW_WORKSPACE:-}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    volumes:
+      - .:/mcp
+      - node_modules:/mcp/node_modules
+
+volumes:
+  node_modules: {}

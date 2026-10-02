@@ -1,0 +1,31 @@
+#!/bin/sh
+# Check that the commit message is a Conventional Commit (https://www.conventionalcommits.org), the same convention as
+# in the app repository. Installed by `make hooks` (core.hooksPath .githooks). No dependencies: plain POSIX sh + grep.
+msg_file="$1"
+# the first line that isn't a comment (git strips "#" lines unless the cleanup mode keeps them)
+subject=$(grep -v '^#' "$msg_file" | sed -n '/[^[:space:]]/{p;q;}')
+
+# merges, reverts and fixup!/squash! commits made by git itself
+case "$subject" in
+  'Merge '* | 'Revert "'* | 'fixup! '* | 'squash! '* | 'amend! '*) exit 0 ;;
+esac
+
+types='feat|fix|perf|docs|refactor|test|build|ci|chore|style|revert'
+if printf '%s\n' "$subject" | grep -Eq "^($types)(\([a-z0-9._/-]+\))?!?: [^[:space:]].*$"; then
+  exit 0
+fi
+
+cat >&2 <<MSG
+commit-msg: the subject is not a Conventional Commit:
+
+  $subject
+
+Use  type(scope): summary  (the scope is optional; "!" before the colon marks a breaking change), e.g.
+
+  feat(tools): add list_comments
+  fix(http)!: refuse requests without a Host header
+  chore(deps): update the MCP SDK
+
+Types: ${types}. See CONTRIBUTING.md → Commit messages.
+MSG
+exit 1

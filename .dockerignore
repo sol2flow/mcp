@@ -1,0 +1,15 @@
+node_modules
+dist
+.git
+.github
+.githooks
+.env
+.env.*
+.DS_Store
+coverage
+test
+examples
+Dockerfile
+docker-compose*.yml
+Makefile
+*.tgz
