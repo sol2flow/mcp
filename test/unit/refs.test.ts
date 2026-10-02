@@ -80,6 +80,16 @@ describe('tasks', () => {
     }
   });
 
+  it('finds a task of an archived board (not in search) by its key', async () => {
+    const prd = fake.boards[0]!;
+    prd.archived = true;
+    try {
+      expect((await resolveTask(ctx(), 'PRD-2')).id).toBe(fake.task('PRD-2').id);
+    } finally {
+      prd.archived = false;
+    }
+  });
+
   it('explains what a task reference is, and what was not found', async () => {
     await expect(resolveTask(ctx(), 'login bug')).rejects.toThrow(/isn't a task reference/);
     await expect(resolveTask(ctx(), 'PRD-99')).rejects.toThrow(/No task PRD-99 in workspace acme/);
@@ -105,6 +115,19 @@ describe('boards and people', () => {
     expect(await resolveBoard(ctx(), 'PRD')).toBe(id);
     expect(await resolveBoard(ctx(), 'product')).toBe(id);
     await expect(resolveBoard(ctx(), 'nothing')).rejects.toThrow(/No board "nothing"/);
+  });
+
+  it('prefers an archived board with that exact key over a live one whose name only contains it', async () => {
+    const live = fake.boards[0]!; // "Product": contains "duc"
+    const archived = { ...live, id: crypto.randomUUID(), key: 'DUC', name: 'Old things', lists: [], archived: true };
+    fake.boards.push(archived);
+    try {
+      expect(await resolveBoard(ctx(), 'DUC')).toBe(archived.id);
+      expect(await resolveBoard(ctx(), 'old things')).toBe(archived.id);
+      expect(await resolveBoard(ctx(), 'prod')).toBe(live.id); // a unique part of a live name still works
+    } finally {
+      fake.boards.splice(fake.boards.indexOf(archived), 1);
+    }
   });
 
   it('resolves me, usernames and names', async () => {

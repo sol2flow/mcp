@@ -119,11 +119,13 @@ async function taskIdByKey(ctx: ToolContext, slug: string, key: string): Promise
     // the old key of a moved task: a hit whose current key and title don't contain what was searched
     const redirected = r.tasks.filter((t) => !norm(t.title).includes(norm(key)) && norm(t.key) !== norm(key));
     if (redirected.length === 1 && r.tasks.length === 1) return redirected[0]!.id;
-    // archived tasks aren't in search: look through the board's archived tasks (the newest 300 changes)
+    // archived tasks, and the tasks of archived boards, aren't in search: look on the board (by its exact key, archived
+    // boards included) through its tasks with the archived ones (the first 300 by last change)
     const boardKey = TASK_KEY.exec(key)![1]!;
     const board =
-      r.boards.find((b) => norm(b.key) === norm(boardKey)) ??
-      (await search(ctx, slug, boardKey)).boards.find((b) => norm(b.key) === norm(boardKey));
+      exactBoard(r.boards, boardKey) ??
+      exactBoard((await search(ctx, slug, boardKey)).boards, boardKey) ??
+      exactBoard((await archivedBoards(ctx, slug)).data, boardKey);
     if (!board) return null;
     const { items } = await ctx.api.all<TaskSummary>('listTasks', {
       query: { board_id: board.id, archived: 'true' },
@@ -132,6 +134,13 @@ async function taskIdByKey(ctx: ToolContext, slug: string, key: string): Promise
     return items.find((t) => norm(t.key) === norm(key))?.id ?? null;
   });
 }
+
+const exactBoard = <B extends { key: string }>(boards: B[], key: string) =>
+  boards.find((b) => norm(b.key) === norm(key));
+
+/** A workspace's archived boards (search leaves them out). Not filtered by `q`: it matches names, not keys. */
+const archivedBoards = (ctx: ToolContext, slug: string) =>
+  ctx.api.call<Page<Board>>('listBoards', { params: { slug }, query: { archived: 'true', limit: 100 } });
 
 export type TaskRef = { id: string; key?: string };
 
@@ -162,24 +171,21 @@ type BoardHit = { id: string; key: string; name: string };
 async function boardInWorkspace(ctx: ToolContext, slug: string, ref: string): Promise<BoardHit | null> {
   return cached(ctx, `board:${slug}:${norm(ref)}`, async () => {
     const r = await search(ctx, slug, ref);
-    const hit =
-      r.boards.find((b) => norm(b.key) === norm(ref)) ??
-      r.boards.find((b) => norm(b.name) === norm(ref)) ??
-      (r.boards.length === 1 ? r.boards[0] : undefined);
-    if (hit) return { id: hit.id, key: hit.key, name: hit.name };
+    const exact = r.boards.find((b) => norm(b.key) === norm(ref)) ?? r.boards.find((b) => norm(b.name) === norm(ref));
+    if (exact) return { id: exact.id, key: exact.key, name: exact.name };
+    // archived boards aren't in search: an exact key or name there wins over a live board that merely contains the
+    // text (archived "AS" must not resolve to a live "Bulk tasks")
+    const archived = await archivedBoards(ctx, slug);
+    const a =
+      archived.data.find((b) => norm(b.key) === norm(ref)) ?? archived.data.find((b) => norm(b.name) === norm(ref));
+    if (a) return { id: a.id, key: a.key, name: a.name };
+    if (r.boards.length === 1) return { id: r.boards[0]!.id, key: r.boards[0]!.key, name: r.boards[0]!.name };
     if (r.boards.length > 1)
       throw new ToolError(
         `"${ref}" matches several boards in ${slug}: ${r.boards.map((b) => `${b.name} (${b.key})`).join(', ')}. ` +
           `Use the board's key.`,
       );
-    // archived boards aren't in search
-    const archived = await ctx.api.call<Page<Board>>('listBoards', {
-      params: { slug },
-      query: { archived: 'true', q: ref, limit: 20 },
-    });
-    const a =
-      archived.data.find((b) => norm(b.key) === norm(ref)) ?? archived.data.find((b) => norm(b.name) === norm(ref));
-    return a ? { id: a.id, key: a.key, name: a.name } : null;
+    return null;
   });
 }
 
