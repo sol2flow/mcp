@@ -18,6 +18,16 @@ describe('output limits', () => {
     expect(out.data.length).toBe(out.truncated.shown);
     expect(out.next_cursor).toBe('abc');
   });
+
+  it('cuts the largest array of an object without `data` (a board and its tasks), keeping it valid', () => {
+    const tasks = Array.from({ length: 300 }, (_, i) => ({ key: `PRD-${i}`, title: 'x'.repeat(80) }));
+    const board = { id: 'b', name: 'Board', lists: [{ id: 'l', name: 'To do' }], tasks, more_tasks: false };
+    const out = JSON.parse(renderJson(board, 5000));
+    expect(out.truncated).toEqual({ field: 'tasks', shown: out.tasks.length, total: 300 });
+    expect(out.tasks.length).toBeGreaterThan(0);
+    expect(out.lists).toEqual(board.lists);
+    expect(out.name).toBe('Board');
+  });
 });
 
 describe('durations', () => {

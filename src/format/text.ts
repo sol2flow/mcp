@@ -21,22 +21,28 @@ export function truncate(text: string, max = MAX_CHARS): string {
 }
 
 /**
- * JSON that stays within the limit: a `data` array (or the value itself, if an array) loses items from the end, and
- * `truncated` says how many were shown.
+ * JSON that stays within the limit: an array (the value itself, its `data`, or else its largest array field, such as a
+ * board's `tasks`) loses items from the end, and `truncated` says how many were shown (and which field was cut).
  */
 export function renderJson(value: unknown, max = MAX_CHARS): string {
   const s = JSON.stringify(value, null, 1);
   if (s.length <= max) return s;
-  const obj = value as Record<string, unknown>;
-  const arr = Array.isArray(value) ? value : Array.isArray(obj?.data) ? (obj.data as unknown[]) : null;
+  const obj = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const field = Array.isArray(value)
+    ? null
+    : Array.isArray(obj.data)
+      ? 'data'
+      : Object.keys(obj)
+          .filter((k) => Array.isArray(obj[k]))
+          .sort((a, b) => JSON.stringify(obj[b]).length - JSON.stringify(obj[a]).length)[0];
+  const arr = Array.isArray(value) ? value : field ? (obj[field] as unknown[]) : null;
   if (arr) {
     let n = arr.length;
     while (n > 0) {
       n = Math.floor(n * 0.8);
       const items = arr.slice(0, n);
-      const out = Array.isArray(value)
-        ? { data: items, truncated: { shown: n, total: arr.length } }
-        : { ...obj, data: items, truncated: { shown: n, total: arr.length } };
+      const truncated = { ...(field && field !== 'data' ? { field } : {}), shown: n, total: arr.length };
+      const out = Array.isArray(value) ? { data: items, truncated } : { ...obj, [field!]: items, truncated };
       const t = JSON.stringify(out, null, 1);
       if (t.length <= max) return t;
     }
