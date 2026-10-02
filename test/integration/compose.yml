@@ -21,7 +21,8 @@ services:
       APP_ENCRYPTION_KEY: integration-test-encryption-key-0123456789abcdef
       MAIL_DRIVER: log
       LOG_LEVEL: warn
-    tmpfs: [/data/uploads]
+    # owned by the app's user (1001): a plain tmpfs is root's, and uploads would fail with EACCES
+    tmpfs: ['/data/uploads:uid=1001,gid=1001,mode=0755']
     healthcheck:
       {
         test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/health >/dev/null'],
