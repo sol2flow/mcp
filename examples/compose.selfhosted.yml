@@ -1,0 +1,27 @@
+# Self-hosting: the MCP server next to your sol2flow (README.md → Self-hosting). Add the `mcp` service to the
+# compose file that runs sol2flow (its service is called `app` here), or start this file alongside it:
+#
+#   docker compose -f compose.yml -f compose.selfhosted.yml up -d
+#
+# MCP clients then connect to https://mcp.example.com/mcp with "Authorization: Bearer sf_…" (an API key from
+# sol2flow → Settings → API keys). Put it behind the same reverse proxy (TLS) as sol2flow.
+services:
+  mcp:
+    image: ghcr.io/sol2flow/mcp:latest
+    restart: unless-stopped
+    read_only: true
+    depends_on: [app]
+    environment:
+      # sol2flow as reachable from this container (the compose service name); never the public URL round trip
+      SOL2FLOW_URL: http://app:3000
+      # the public host name clients use (the Host header the proxy forwards)
+      ALLOWED_HOSTS: mcp.example.com
+      # one reverse proxy in front: its X-Forwarded-For entry is the client
+      TRUST_PROXY_HOPS: '1'
+      FORWARD_CLIENT_IP: 'true'
+      # optional: the default workspace slug, or hide every tool that writes
+      # SOL2FLOW_WORKSPACE: acme
+      # READ_ONLY: 'true'
+    ports:
+      # only for the reverse proxy on this host; drop it if the proxy is in this compose project
+      - '127.0.0.1:3005:3000'

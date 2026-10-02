@@ -1,0 +1,56 @@
+# The hosted MCP server at https://mcp.sol2flow.com/mcp, as a Docker Swarm stack next to the sol2flow app's stack
+# (README.md → Hosting). Everything inline, secrets as Docker secrets, no env files.
+#
+#   docker secret create mcp_sentry_dsn -          # paste the DSN, then Ctrl+D
+#   sudo install -d -o 1001 -g 1001 /home/devops/docker/mounts/sol2flow_prod_mcp/logs
+#   docker stack deploy -c swarm-stack.yml sol2flow_mcp
+#
+# The Cloudflare tunnel routes mcp.sol2flow.com → http://sol2flow_mcp:3000 (the network alias below), with bot
+# challenges off for that host: MCP clients aren't browsers.
+services:
+  mcp:
+    image: ghcr.io/sol2flow/mcp:latest
+    read_only: true
+    environment:
+      # the app's internal address on the shared network (no round trip through the tunnel)
+      SOL2FLOW_URL: http://sol2flow_web:3000
+      ALLOWED_HOSTS: mcp.sol2flow.com
+      # the tunnel is one proxy hop: its X-Forwarded-For entry is the client
+      TRUST_PROXY_HOPS: '1'
+      # pass the client's address on, so the app's per-IP limits and "last used from" see the person
+      FORWARD_CLIENT_IP: 'true'
+      LOG_LEVEL: info
+      LOG_FILE: /data/logs/mcp.log
+      LOG_FILE_MAX_FILES: '14'
+      SENTRY_DSN_FILE: /run/secrets/mcp_sentry_dsn
+      SENTRY_ENVIRONMENT: production
+    secrets:
+      - mcp_sentry_dsn
+    volumes:
+      - /home/devops/docker/mounts/sol2flow_prod_mcp/logs:/data/logs
+    networks:
+      sol2flow:
+        # the name the tunnel (and nothing else) uses to reach it
+        aliases: [sol2flow_mcp]
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        order: start-first
+      restart_policy:
+        condition: any
+        delay: 5s
+      resources:
+        limits:
+          memory: 256M
+
+secrets:
+  mcp_sentry_dsn:
+    external: true
+
+networks:
+  # the network the app's stack (sol2flow_web) and the tunnel share
+  sol2flow:
+    external: true
