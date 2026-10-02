@@ -69,6 +69,16 @@ describe('tool calls', () => {
     expect(r.text).toMatch(/API 1\.8\.0/);
     expect(r.text).toMatch(/default \*\*acme\*\*/);
 
+    // answered from cache alone (no request): the version seen before still shows, also in JSON
+    c = await connect(fake);
+    fake.requests = [];
+    r = await c.call('whoami');
+    const j = JSON.parse((await c.call('whoami', { response_format: 'json' })).text);
+    await c.close();
+    expect(fake.requests).toHaveLength(0);
+    expect(r.text).toMatch(/API 1\.8\.0/);
+    expect(j.api_version).toBe('1.8.0');
+
     fake.version = null;
     clearCache();
     c = await connect(fake);

@@ -45,6 +45,9 @@ export function createServer(o: ServerOptions): McpServer {
   );
   const fp = o.apiKey ? fingerprint(o.apiKey) : 'none';
   const logFields = { ...o.logFields, key: undefined, key_prefix: keyPrefix(o.apiKey) };
+  // the instance's API version, as last seen with this key: whoami and error messages need it even when a call is
+  // answered from cache alone
+  const versionKey = `${fp}:api-version`;
   registerTools(server, TOOLS, {
     readOnly: o.readOnly,
     logFields,
@@ -67,6 +70,8 @@ export function createServer(o: ServerOptions): McpServer {
         signal,
         fetch: o.fetch,
         onRefused: o.onRefused,
+        apiVersion: refCache.get(versionKey) as string | undefined,
+        onVersion: (v) => refCache.set(versionKey, v),
         onCall: (r: CallRecord) => log.debug({ ...logFields, tool, ...r }, 'api call'),
       }),
     }),

@@ -42,6 +42,10 @@ export type ClientOptions = {
   onCall?: (r: CallRecord) => void;
   /** the API refused the key (401): the HTTP transport stops sending it for a while */
   onRefused?: () => void;
+  /** the version an earlier call saw: a call answered from cache alone still knows it */
+  apiVersion?: string | null;
+  /** each response's `Sol2flow-Api-Version`, to remember it for later calls */
+  onVersion?: (version: string) => void;
 };
 
 export const VERSION_HEADER = 'sol2flow-api-version';
@@ -54,6 +58,7 @@ export class ApiClient {
   private readonly o: Required<Pick<ClientOptions, 'callTimeoutMs' | 'fetch' | 'sleep'>> & ClientOptions;
 
   constructor(o: ClientOptions) {
+    this.apiVersion = o.apiVersion ?? null;
     this.o = {
       ...o,
       callTimeoutMs: o.callTimeoutMs ?? CALL_TIMEOUT_MS,
@@ -122,7 +127,10 @@ export class ApiClient {
         throw new TransportError(op, !read, timeout, reason);
       }
       const version = res.headers.get(VERSION_HEADER);
-      if (version) this.apiVersion = version.trim();
+      if (version) {
+        this.apiVersion = version.trim();
+        this.o.onVersion?.(this.apiVersion);
+      }
       this.o.onCall?.({ op, method, status: res.status, ms: Date.now() - started, attempt });
       if (res.status === 204) return undefined as T;
       const text = await res.text().catch(() => '');
