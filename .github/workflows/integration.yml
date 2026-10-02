@@ -1,6 +1,6 @@
 name: Integration
 # The MCP server's flows against a real sol2flow: the app image (ghcr.io/sol2flow/sol2flow, a private package: give
-# this repository read access in the package's settings) on PostgreSQL 18 (make test-integration, README.md → Tests).
+# this repository read access in the package's settings) on PostgreSQL 18 (make test-integration, DEVELOPMENT.md → Tests).
 # While the repository is private (Actions minutes): by hand and weekly. Once it is public: also on every pull request.
 on:
   workflow_dispatch:

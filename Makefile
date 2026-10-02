@@ -54,7 +54,7 @@ check: install ## Format check + lint + typecheck + tests (unit, protocol, contr
 test: install ## Unit, protocol and contract tests (vitest, against the fake API in test/fake-api)
 	$(RUN) npm test
 
-test-integration: install ## Against a real app: APP_IMAGE=… on PostgreSQL 18, or APP_CONTAINER=… already running (README.md → Tests)
+test-integration: install ## Against a real app: APP_IMAGE=… on PostgreSQL 18, or APP_CONTAINER=… already running (DEVELOPMENT.md → Tests)
 	APP_IMAGE='$(APP_IMAGE)' APP_CONTAINER='$(APP_CONTAINER)' ARGS='$(ARGS)' sh test/integration/run.sh
 
 lint: install ## ESLint

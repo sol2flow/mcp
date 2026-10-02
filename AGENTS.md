@@ -2,7 +2,7 @@
 
 The sol2flow MCP server: TypeScript (ESM, strict), the MCP SDK and zod, bundled by esbuild into one file. It talks to
 sol2flow **only through the public REST API** (`/api/v1`); the app (sol2flow/sol2flow) and the docs (sol2flow/docs)
-are separate repositories. README.md is the reference.
+are separate repositories. README.md is the user reference; DEVELOPMENT.md covers building, testing and releasing.
 
 ## Ground rules
 

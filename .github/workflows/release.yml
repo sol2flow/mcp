@@ -5,7 +5,7 @@ name: Release
 # the Conventional Commits since the last tag and, if any commit releases, publishes @sol2flow/mcp to npm, tags vX.Y.Z
 # and creates the GitHub release with its notes. Then the image (amd64 + arm64) is pushed to ghcr.io/sol2flow/mcp as
 # :X.Y.Z, :X.Y, :X and :latest (and :edge / :sha-… once the repository is public), and the deploy job asks the
-# server to update (README.md → Releases, Deployment).
+# server to update (DEVELOPMENT.md → Releases, Deployment).
 # One workflow on purpose: tags created with the GITHUB_TOKEN don't trigger other workflows.
 on:
   push:
@@ -64,7 +64,7 @@ jobs:
             git tag v0.0.0 "$(git rev-list --max-parents=0 HEAD | tail -n 1)"
           fi
       # @semantic-release/npm sets the version in package.json and runs `npm publish`, whose prepack builds the bundle
-      # with that version. NPM_TOKEN: a granular token allowed to publish @sol2flow/mcp (README.md → Releases).
+      # with that version. NPM_TOKEN: a granular token allowed to publish @sol2flow/mcp (DEVELOPMENT.md → Releases).
       # Provenance needs a public repository: npm refuses it for private ones.
       - run: npx semantic-release
         env:
@@ -146,7 +146,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
 
-  # Deployment (README.md → Deployment): after a release has pushed the versioned image, join the Headscale tailnet
+  # Deployment (DEVELOPMENT.md → Deployment): after a release has pushed the versioned image, join the Headscale tailnet
   # and send an empty POST to the deploy webhook. Without HEADSCALE_URL, HEADSCALE_AUTHKEY or DEPLOY_WEBHOOK_URL the
   # job only prints a notice; a webhook that still fails after the retries fails the job (the image is pushed either
   # way). Repository secrets, no environment: environment secrets need a paid plan in a private repository.
@@ -176,7 +176,7 @@ jobs:
           if [ -z "$WEBHOOK" ]; then missing="$missing DEPLOY_WEBHOOK_URL"; fi
           if [ -n "$missing" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Not deployed::Not set:$missing (README.md → Deployment). The image is pushed."
+            echo "::notice title=Not deployed::Not set:$missing (DEVELOPMENT.md → Deployment). The image is pushed."
             echo "Not deployed: not set:$missing" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "enabled=true" >> "$GITHUB_OUTPUT"
