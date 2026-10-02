@@ -35,7 +35,7 @@ are separate repositories. README.md is the reference.
 ```
 make check              # format check + lint + typecheck + tests + bundle + npm pack --dry-run
 make test               # unit, protocol, contract (fake API)
-make test-integration   # against a real app image on PostgreSQL 18
+make test-integration   # against a real app: an image on PostgreSQL 18, or APP_CONTAINER=<running app on *_test>
 make dev | inspector    # HTTP server on 3005 | MCP Inspector on 6274
 make openapi-sync       # refresh the vendored OpenAPI document and types
 ```
