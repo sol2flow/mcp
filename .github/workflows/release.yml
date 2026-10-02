@@ -1,0 +1,216 @@
+name: Release
+# Pull requests: format check, lint, typecheck, tests (unit, protocol, contract), the bundle, the third-party notices,
+# `npm pack --dry-run` and `--version`, and an image build (nothing pushed).
+# main (every push or merge): the same checks, then semantic-release (.releaserc.json) computes the next version from
+# the Conventional Commits since the last tag and, if any commit releases, publishes @sol2flow/mcp to npm, tags vX.Y.Z
+# and creates the GitHub release with its notes. Then the image (amd64 + arm64) is pushed to ghcr.io/sol2flow/mcp as
+# :X.Y.Z, :X.Y, :X and :latest (and :edge / :sha-… once the repository is public), and the deploy job asks the
+# server to update (README.md → Releases, Deployment).
+# One workflow on purpose: tags created with the GITHUB_TOKEN don't trigger other workflows.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# One run at a time per ref; a run on main is never cancelled halfway through a release, pull request runs are.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/sol2flow/mcp
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/notices.mjs --check
+      - run: node dist/index.js --version
+      - run: npm pack --dry-run
+
+  release:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # the tag and the GitHub release; id-token for npm provenance (public repository only)
+    permissions: { contents: write, id-token: write }
+    outputs:
+      released: ${{ steps.result.outputs.released }}
+      version: ${{ steps.result.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      # Without any tag semantic-release would start at 1.0.0. A v0.0.0 tag on the first commit makes the first release
+      # 0.1.0 instead (feat → minor). semantic-release pushes it together with that first release's tag; until then it is
+      # only created in the runner.
+      - name: Start at v0.0.0
+        run: |
+          if [ -z "$(git tag --list 'v[0-9]*' --merged HEAD)" ]; then
+            git tag v0.0.0 "$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+          fi
+      # @semantic-release/npm sets the version in package.json and runs `npm publish`, whose prepack builds the bundle
+      # with that version. NPM_TOKEN: a granular token allowed to publish @sol2flow/mcp (README.md → Releases).
+      # Provenance needs a public repository: npm refuses it for private ones.
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: ${{ !github.event.repository.private }}
+      # The release tag on this commit, if any: new from this run, or from an earlier attempt of it (a re-run then
+      # pushes the versioned image tags again)
+      - id: result
+        run: |
+          tag=$(git tag --points-at HEAD --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx 'v0.0.0' | sort -V | tail -n 1 || true)
+          if [ -n "$tag" ]; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+            echo "Released $tag" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+            echo "No release: no commit since the last tag releases (chore, ci, test and build don't)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  image:
+    needs: [check, release]
+    # pull requests: build only (release is skipped); main: after the release step, released or not.
+    # While the repository is private (free Actions minutes, 500 MB package storage) only a release builds and pushes an
+    # image; pull request builds and the :edge / :sha images start on their own once it is public.
+    if: >-
+      !cancelled() && needs.check.result == 'success' &&
+      ((github.event_name == 'pull_request' && !github.event.repository.private) ||
+       (needs.release.result == 'success' &&
+        (!github.event.repository.private || needs.release.outputs.released == 'true')))
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    outputs:
+      image: ${{ env.IMAGE }}
+      version: ${{ needs.release.outputs.version }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      # 1.4.2 → :1.4.2, :1.4, :1 and :latest (latest only moves with a release, never with a plain push)
+      - id: version
+        if: needs.release.outputs.released == 'true'
+        env: { VERSION: '${{ needs.release.outputs.version }}' }
+        run: |
+          {
+            echo 'tags<<EOF'
+            echo "type=raw,value=$VERSION"
+            echo "type=raw,value=${VERSION%.*}"
+            echo "type=raw,value=${VERSION%%.*}"
+            echo 'type=raw,value=latest'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            ${{ steps.version.outputs.tags }}
+            type=raw,value=edge,enable=${{ github.event_name == 'push' && !github.event.repository.private }}
+            type=sha,enable=${{ github.event_name == 'push' && !github.event.repository.private }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.release.outputs.version || 'edge' }}
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # amd64 and arm64 without emulation: the build stage runs on the runner's platform and the runtime stage has
+          # no RUN step (Dockerfile), so no QEMU is needed
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ needs.release.outputs.version || 'edge' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+
+  # Deployment (README.md → Deployment): after a release has pushed the versioned image, join the Headscale tailnet
+  # and send an empty POST to the deploy webhook. Without HEADSCALE_URL, HEADSCALE_AUTHKEY or DEPLOY_WEBHOOK_URL the
+  # job only prints a notice; a webhook that still fails after the retries fails the job (the image is pushed either
+  # way). Repository secrets, no environment: environment secrets need a paid plan in a private repository.
+  deploy:
+    needs: [release, image]
+    if: >-
+      !cancelled() && needs.image.result == 'success' && github.event_name != 'pull_request' &&
+      github.ref_name == github.event.repository.default_branch &&
+      needs.release.outputs.released == 'true' && needs.image.outputs.digest != ''
+    runs-on: ubuntu-latest
+    permissions: {}
+    concurrency:
+      group: deploy-${{ github.repository }}
+      cancel-in-progress: false
+    timeout-minutes: 15
+    env:
+      HEADSCALE_URL: ${{ vars.HEADSCALE_URL || secrets.HEADSCALE_URL }}
+    steps:
+      - id: config
+        env:
+          AUTHKEY: ${{ secrets.HEADSCALE_AUTHKEY }}
+          WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          missing=""
+          if [ -z "$HEADSCALE_URL" ]; then missing="$missing HEADSCALE_URL"; fi
+          if [ -z "$AUTHKEY" ]; then missing="$missing HEADSCALE_AUTHKEY"; fi
+          if [ -z "$WEBHOOK" ]; then missing="$missing DEPLOY_WEBHOOK_URL"; fi
+          if [ -n "$missing" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Not deployed::Not set:$missing (README.md → Deployment). The image is pushed."
+            echo "Not deployed: not set:$missing" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.config.outputs.enabled == 'true'
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.HEADSCALE_AUTHKEY }}
+          args: --login-server=${{ env.HEADSCALE_URL }}
+          hostname: gha-${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+      # an empty POST (Content-Length: 0); only the webhook's host is printed, never the URL
+      - if: steps.config.outputs.enabled == 'true'
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          IMAGE: ${{ needs.image.outputs.image }}
+          VERSION: ${{ needs.image.outputs.version }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          host=$(printf '%s' "$DEPLOY_WEBHOOK_URL" | sed -E 's#^[A-Za-z][A-Za-z0-9+.-]*://##; s#^[^/@]*@##; s#[/?\#].*$##')
+          echo "Deploying $IMAGE:$VERSION@$DIGEST: POST to $host"
+          response="$RUNNER_TEMP/deploy-response"
+          : > "$response"
+          status=0
+          code=$(curl -X POST --data-binary '' --header 'Content-Type:' --silent --show-error --fail-with-body \
+            --retry 5 --retry-all-errors --retry-delay 5 --max-time 30 \
+            --output "$response" --write-out '%{http_code}' "$DEPLOY_WEBHOOK_URL") || status=$?
+          if [ -s "$response" ]; then
+            echo "Response (HTTP $code):"
+            head -c 2000 "$response"
+            echo
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::The deploy webhook on $host failed after the retries (curl exit $status, HTTP $code). The image is pushed: re-run this job or deploy by hand."
+            exit 1
+          fi
+          echo "Deploy requested on $host (HTTP $code)"
+          echo "Deploy of $VERSION requested on $host (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"

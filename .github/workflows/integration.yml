@@ -1,0 +1,35 @@
+name: Integration
+# The MCP server's flows against a real sol2flow: the app image (ghcr.io/sol2flow/sol2flow, a private package: give
+# this repository read access in the package's settings) on PostgreSQL 18 (make test-integration, README.md → Tests).
+# While the repository is private (Actions minutes): by hand and weekly. Once it is public: also on every pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      app_image:
+        description: App image to test against
+        default: ghcr.io/sol2flow/sol2flow:latest
+  schedule:
+    - cron: '17 5 * * 1'
+  pull_request:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flows:
+    if: github.event_name != 'pull_request' || !github.event.repository.private
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      - run: make install
+      - run: make test-integration APP_IMAGE="${APP_IMAGE}"
+        env:
+          APP_IMAGE: ${{ inputs.app_image || 'ghcr.io/sol2flow/sol2flow:latest' }}

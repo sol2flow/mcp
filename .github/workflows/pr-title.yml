@@ -1,0 +1,29 @@
+name: PR title
+# Pull requests are squash-merged, so the title becomes the commit message on main: it must be a Conventional Commit,
+# e.g. "feat(tools): add list_comments" (the same convention as the app repository).
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+permissions: { pull-requests: read }
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+        with:
+          types: |
+            feat
+            fix
+            perf
+            docs
+            refactor
+            test
+            build
+            ci
+            chore
+            style
+            revert
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: 'The subject "{subject}" must start with a lowercase letter, e.g. "feat(tools): add list_comments".'
