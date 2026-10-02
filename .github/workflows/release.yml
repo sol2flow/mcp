@@ -127,7 +127,7 @@ jobs:
           labels: |
             org.opencontainers.image.version=${{ needs.release.outputs.version || 'edge' }}
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           # amd64 and arm64 without emulation: the build stage runs on the runner's platform and the runtime stage has
