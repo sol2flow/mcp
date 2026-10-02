@@ -1,0 +1,49 @@
+# make test-integration (README.md → Tests): the MCP server's flows against a real sol2flow — the app image
+# (APP_IMAGE) on PostgreSQL 18, both throwaway (data on tmpfs, `down -v` afterwards). The seed (seed.mjs) runs inside
+# the app container with its Prisma client; the tests run in `runner`, with the mcp dev stack's node_modules volume.
+name: sol2flow-mcp-it
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment: { POSTGRES_USER: sol2flow, POSTGRES_PASSWORD: sol2flow, POSTGRES_DB: sol2flow }
+    tmpfs: [/var/lib/postgresql]
+    healthcheck: { test: ['CMD-SHELL', 'pg_isready -U sol2flow'], interval: 2s, retries: 30 }
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/sol2flow/sol2flow:latest}
+    environment:
+      APP_URL: http://app:3000
+      DATABASE_URL: postgresql://sol2flow:sol2flow@db:5432/sol2flow?schema=public
+      # test-only values for a throwaway instance
+      AUTH_SECRET: integration-test-auth-secret-0123456789
+      APP_ENCRYPTION_KEY: integration-test-encryption-key-0123456789abcdef
+      MAIL_DRIVER: log
+      LOG_LEVEL: warn
+    tmpfs: [/data/uploads]
+    healthcheck:
+      {
+        test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/health >/dev/null'],
+        interval: 3s,
+        retries: 60,
+        start_period: 30s,
+      }
+    depends_on: { db: { condition: service_healthy } }
+
+  runner:
+    image: node:22-alpine
+    working_dir: /mcp
+    environment:
+      SOL2FLOW_URL: http://app:3000
+      IT_FULL_KEY: ${IT_FULL_KEY:-}
+      IT_READ_KEY: ${IT_READ_KEY:-}
+      NPM_CONFIG_UPDATE_NOTIFIER: 'false'
+    volumes:
+      - ../..:/mcp
+      - node_modules:/mcp/node_modules
+    command: ['npx', 'vitest', 'run', '--project', 'integration']
+    depends_on: { app: { condition: service_healthy } }
+
+volumes:
+  # the dev stack's (make install fills it)
+  node_modules: { name: sol2flow-mcp_node_modules, external: true }
