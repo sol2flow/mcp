@@ -31,8 +31,3 @@ GitHub release). `feat` → minor; `fix`, `perf`, `docs`, `refactor`, `style`, `
 or a `BREAKING CHANGE:` footer) → major (minor while the version is `0.x`); `chore`, `ci`, `test`, `build` → no
 release. The title is the line in the release notes: write it for readers of the
 [releases page](https://github.com/sol2flow/mcp/releases).
-
-## Trademark
-
-The code is MIT; the name "sol2flow" and its logo are not. A fork must not present itself as the official sol2flow MCP
-server: see the [trademark policy](https://github.com/sol2flow/sol2flow/blob/main/TRADEMARKS.md).

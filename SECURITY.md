@@ -1,6 +1,6 @@
 # Security
 
-Report vulnerabilities privately to **info@sol2flow.com**. Do not open public issues. Please include the version
+Report vulnerabilities privately to **security@sol2flow.com**. Do not open public issues. Please include the version
 (`sol2flow-mcp --version` or the image tag), how you run it (stdio, HTTP, the hosted server) and the steps to reproduce.
 
 What the server does to protect you:

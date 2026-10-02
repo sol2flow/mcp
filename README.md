@@ -301,6 +301,5 @@ the job only prints a notice.
 ## License
 
 MIT (see [LICENSE](LICENSE)); the bundled packages' licences are in
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). "sol2flow" and its logo are trademarks: see the
-[trademark policy](https://github.com/sol2flow/sol2flow/blob/main/TRADEMARKS.md). Contributions are welcome under the MIT
-licence, without a CLA ([CONTRIBUTING.md](CONTRIBUTING.md)). Security reports: [SECURITY.md](SECURITY.md).
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Contributions are welcome under the MIT licence, without a CLA
+([CONTRIBUTING.md](CONTRIBUTING.md)). Security reports: [SECURITY.md](SECURITY.md).
