@@ -116,7 +116,7 @@ export function taskView(t: Task, links: TaskLink[] | null, comments: Comment[] 
             .join('\n')
         : '_(none)_',
     );
-  if (t.counts.attachments) out.push('', `_${t.counts.attachments} attachment(s): open the task in the app._`);
+  if (t.counts.attachments) out.push('', `_${t.counts.attachments} attachment(s): list_attachments shows them._`);
   return out.join('\n');
 }
 

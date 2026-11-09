@@ -136,3 +136,33 @@ describe('retries', () => {
     expect(refused).toBe(1);
   });
 });
+
+describe('download', () => {
+  const PNG = Buffer.from('89504e470d0a1a0a', 'hex');
+  const file = (o: Partial<FakeApi['files'][number]> = {}) => {
+    const f = { id: crypto.randomUUID(), task_id: 'x', name: 'a.png', type: 'image/png', bytes: PNG, ...o };
+    fake.files.push(f);
+    return f;
+  };
+
+  it("a 401 from the storage behind the redirect doesn't mark the key refused; the API's own 401 does", async () => {
+    let refused = 0;
+    const c = client({ onRefused: () => void refused++ });
+    const f = file({ s3: true, s3Status: 401 });
+    await expect(c.download('downloadFile', { params: { fileId: f.id } }, () => 100)).rejects.toThrow(/file storage/);
+    expect(refused).toBe(0);
+    const bad = client({ apiKey: 'sf_nope', onRefused: () => void refused++ });
+    await expect(bad.download('downloadFile', { params: { fileId: f.id } }, () => 100)).rejects.toBeInstanceOf(
+      ApiError,
+    );
+    expect(refused).toBe(1);
+  });
+
+  it('reads at most the cap: without Content-Length the size is a lower bound', async () => {
+    const f = file({ bytes: Buffer.alloc(200_000), chunked: true });
+    const d = await client().download('downloadFile', { params: { fileId: f.id } }, () => 1000);
+    expect(d).toMatchObject({ bytes: null, atLeast: true });
+    expect(d.size).toBeGreaterThan(1000);
+    expect(d.size).toBeLessThan(200_000);
+  });
+});

@@ -130,7 +130,7 @@ describe('HTTP transport', () => {
     const { c } = await client(KEYS.full, '?read_only=1&workspace=acme');
     const { tools } = await c.listTools();
     await c.close();
-    expect(tools).toHaveLength(13);
+    expect(tools).toHaveLength(15);
   });
 
   it("a key sol2flow refused isn't sent upstream again for a while", async () => {

@@ -13,11 +13,11 @@ beforeEach(() => {
 });
 
 describe('tools/list', () => {
-  it('lists 32 tools with annotations, without calling the API', async () => {
+  it('lists 34 tools with annotations, without calling the API', async () => {
     const c = await connect(fake);
     const { tools } = await c.client.listTools();
     await c.close();
-    expect(tools).toHaveLength(32);
+    expect(tools).toHaveLength(34);
     expect(fake.requests).toHaveLength(0);
     for (const t of tools) {
       expect(t.name).toMatch(/^[a-z]+(_[a-z]+)*$/);
@@ -45,7 +45,7 @@ describe('tools/list', () => {
     await c.close();
     const reads = TOOLS.filter((t) => t.scope === 'read').map((t) => t.name);
     expect(tools.map((t) => t.name).sort()).toEqual(reads.sort());
-    expect(reads).toHaveLength(13);
+    expect(reads).toHaveLength(15);
     expect(tools.every((t) => t.annotations?.readOnlyHint)).toBe(true);
   });
 

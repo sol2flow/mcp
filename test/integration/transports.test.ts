@@ -69,7 +69,7 @@ describe('stdio', () => {
   it('a full key: every tool listed, reads and writes work', async () => {
     const c = await stdio(w.keys.stdio!.key, { SOL2FLOW_WORKSPACE: ws });
     try {
-      expect((await c.client.listTools()).tools).toHaveLength(32);
+      expect((await c.client.listTools()).tools).toHaveLength(34);
       const who = await c.call('whoami');
       expect(who.text).toContain(`API key "it stdio" (sf_${w.keys.stdio!.prefix}…): full access`);
       expect(who.text).toContain(`API ${w.apiVersion}`);
@@ -96,7 +96,7 @@ describe('stdio', () => {
     const c = await stdio(w.keys.read!.key);
     try {
       const names = (await c.client.listTools()).tools.map((t) => t.name);
-      expect(names).toHaveLength(13);
+      expect(names).toHaveLength(15);
       expect(names).not.toContain('create_task');
       expect((await c.call('list_boards', { workspace: ws })).text).toContain('**FL**');
       expect(c.log()).toContain('read-only API key: the write tools are hidden');
@@ -108,7 +108,7 @@ describe('stdio', () => {
   it('a revoked key: the server starts, every tool says why', async () => {
     const c = await stdio(w.keys.revoked!.key);
     try {
-      expect((await c.client.listTools()).tools).toHaveLength(32);
+      expect((await c.client.listTools()).tools).toHaveLength(34);
       const r = await c.call('list_boards', { workspace: ws });
       expect(r.isError).toBe(true);
       expect(r.text).toMatch(/^sol2flow refused the API key/);
@@ -201,7 +201,7 @@ describe('Streamable HTTP', () => {
   it('a full key: tools work and their writes land', async () => {
     const c = await http(w.keys.http!.key, `?workspace=${ws}`);
     try {
-      expect((await c.client.listTools()).tools).toHaveLength(32);
+      expect((await c.client.listTools()).tools).toHaveLength(34);
       expect((await c.call('whoami')).text).toContain(`default **${ws}**`);
       const created = await c.call('create_task', { board: 'MB', title: SECRET_ARG, description: 'http body text' });
       const key = /^Created (\S+)/.exec(created.text)![1]!;
@@ -217,7 +217,7 @@ describe('Streamable HTTP', () => {
   it('a read-only key: the writes are listed but refused with the scope error; ?read_only=1 hides them', async () => {
     const c = await http(w.keys.read!.key, `?workspace=${ws}`);
     try {
-      expect((await c.client.listTools()).tools).toHaveLength(32);
+      expect((await c.client.listTools()).tools).toHaveLength(34);
       const r = await c.call('create_task', { board: 'MB', title: 'nope' });
       expect(r.isError).toBe(true);
       expect(r.text).toMatch(/^This API key is read-only, so create_task can't change anything/);
@@ -226,7 +226,7 @@ describe('Streamable HTTP', () => {
       await c.close();
     }
     const ro = await http(w.keys.read!.key, '?read_only=1');
-    expect((await ro.client.listTools()).tools).toHaveLength(13);
+    expect((await ro.client.listTools()).tools).toHaveLength(15);
     await ro.close();
   });
 

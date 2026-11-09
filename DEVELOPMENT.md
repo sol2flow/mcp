@@ -44,7 +44,7 @@ While the app's dev stack runs (network `sol2flow-dev_default`), the dev contain
   into the database (refusing any database whose name doesn't end in `_test`) and lets the tests flip what the API
   can't (instance and workspace API access). `setup.ts` builds the boards, tasks, links, comments, an attachment,
   notifications and invitations through the REST API. Then, checking every write through the REST API:
-  `tools.test.ts` (all 32 tools and both prompts), `refs.test.ts` (ids, keys, URLs, old keys, archived tasks and boards,
+  `tools.test.ts` (all 34 tools and both prompts), `refs.test.ts` (ids, keys, URLs, old keys, archived tasks and boards,
   names, people, the default workspace, ambiguity), `permissions.test.ts` (read-only, revoked, expired and unknown keys,
   `api_disabled`, `api_disabled_workspace`, viewers, guests, restricted boards and hidden links, archived boards,
   `plan_feature`, the daily `apiCalls` limit, `plan_read_only`, `rate_limited` retried only for reads),

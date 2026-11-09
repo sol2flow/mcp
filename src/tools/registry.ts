@@ -31,8 +31,11 @@ export type ToolDef<S extends z.ZodRawShape = z.ZodRawShape> = {
   idempotent?: boolean;
   /** API request field → this tool's parameter, for validation messages ("Invalid due_date: …") */
   params?: Record<string, string>;
-  run(ctx: ToolContext, args: z.output<z.ZodObject<S>>): Promise<string>;
+  /** text, or content blocks (an image with a line of text: get_file) */
+  run(ctx: ToolContext, args: z.output<z.ZodObject<S>>): Promise<string | ToolContent>;
 };
+
+export type ToolContent = CallToolResult['content'];
 
 export const defineTool = <S extends z.ZodRawShape>(d: ToolDef<S>): ToolDef => d as unknown as ToolDef;
 
@@ -86,12 +89,12 @@ async function runTool(
   const signal = AbortSignal.any([clientSignal, AbortSignal.timeout(TOOL_DEADLINE_MS)]);
   const ctx = o.context(t.name, signal);
   try {
-    const text = await run(t, ctx, args);
+    const out = await run(t, ctx, args);
     log.info(
       { ...o.logFields, tool: t.name, outcome: 'ok', ms: Date.now() - started, requests: ctx.api.requests },
       'tool call',
     );
-    return { content: [{ type: 'text', text }] };
+    return { content: typeof out === 'string' ? [{ type: 'text', text: out }] : out };
   } catch (e) {
     const text = describeError(e, {
       tool: t.name,

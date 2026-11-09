@@ -80,7 +80,7 @@ describe('stdio', () => {
     );
     const msgs = out.map((l) => JSON.parse(l));
     for (const m of msgs) expect(m.jsonrpc).toBe('2.0');
-    expect(msgs.find((m) => m.id === 2).result.tools).toHaveLength(13);
+    expect(msgs.find((m) => m.id === 2).result.tools).toHaveLength(15);
     expect(JSON.stringify(msgs.find((m) => m.id === 3).result)).toMatch(/read-only/);
     expect(err).toMatch(/"msg":"connected to sol2flow"/);
     expect(err).toMatch(/"scope":"read"/);
