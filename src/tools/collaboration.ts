@@ -20,7 +20,7 @@ export const addComment = defineTool({
   input: {
     task: p.task,
     workspace: p.workspace,
-    text: z.string().trim().min(1).max(10_000).describe('Markdown (GFM)'),
+    text: z.string().trim().min(1).max(10_000).describe('Markdown (GFM); a ```mermaid code block shows as a diagram'),
     reply_to: z.string().trim().optional().describe('Id of the top-level comment to reply to'),
   },
   async run(ctx, a) {
