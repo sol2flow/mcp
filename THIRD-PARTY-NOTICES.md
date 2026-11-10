@@ -6,7 +6,7 @@ The sol2flow MCP server (MIT, see LICENSE) bundles the following packages. Gener
 ## Bundled into dist/index.js (npm package and image)
 
 - @hono/node-server 2.1.3 (MIT)
-- @modelcontextprotocol/sdk 1.32.1 (MIT)
+- @modelcontextprotocol/sdk 1.32.2 (MIT)
 - @pinojs/redact 0.4.0 (MIT)
 - ajv 8.20.0 (MIT)
 - ajv-formats 3.0.1 (MIT)
@@ -54,7 +54,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @modelcontextprotocol/sdk 1.32.1
+### @modelcontextprotocol/sdk 1.32.2
 
 License: MIT · https://modelcontextprotocol.io
 
@@ -579,12 +579,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ## Bundled into dist/sentry-sdk.js (image only)
 
 - @opentelemetry/api 1.9.1 (Apache-2.0)
-- @sentry/conventions 0.29.0 (MIT)
-- @sentry/core 11.10.0 (MIT)
-- @sentry/node 11.10.0 (MIT)
-- @sentry/opentelemetry 11.10.0 (MIT)
-- @sentry/server-runtime-injection 11.10.0 (MIT)
-- @sentry/server-utils 11.10.0 (MIT)
+- @sentry/conventions 0.30.0 (MIT)
+- @sentry/core 11.11.0 (MIT)
+- @sentry/node 11.11.0 (MIT)
+- @sentry/opentelemetry 11.11.0 (MIT)
+- @sentry/server-runtime-injection 11.11.0 (MIT)
+- @sentry/server-utils 11.11.0 (MIT)
 
 ### @opentelemetry/api 1.9.1
 
@@ -794,7 +794,7 @@ Apache License
    limitations under the License.
 ```
 
-### @sentry/conventions 0.29.0
+### @sentry/conventions 0.30.0
 
 License: MIT · https://github.com/getsentry/sentry-conventions#readme
 
@@ -822,7 +822,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @sentry/core 11.10.0
+### @sentry/core 11.11.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/core
 
@@ -850,7 +850,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @sentry/node 11.10.0
+### @sentry/node 11.11.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/node
 
@@ -887,7 +887,7 @@ Functional Source License, Version 1.1, Apache 2.0 Future License
 (FSL-1.1-Apache-2.0): https://github.com/getsentry/cli/blob/main/LICENSE.md
 ```
 
-### @sentry/opentelemetry 11.10.0
+### @sentry/opentelemetry 11.11.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/opentelemetry
 
@@ -915,10 +915,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @sentry/server-runtime-injection 11.10.0
+### @sentry/server-runtime-injection 11.11.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/server-runtime-injection
 
-### @sentry/server-utils 11.10.0
+### @sentry/server-utils 11.11.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/server-utils
