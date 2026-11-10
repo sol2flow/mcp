@@ -203,7 +203,8 @@ export class ApiClient {
     const type = (res.headers.get('content-type') ?? 'application/octet-stream').split(';')[0]!.trim().toLowerCase();
     const name = fileName(res.headers.get('content-disposition'));
     const length = res.headers.get('content-length');
-    const declared = length === null ? null : Number(length);
+    // a Content-Length that isn't a plain byte count is ignored (the body is measured instead)
+    const declared = length !== null && /^\d+$/.test(length.trim()) ? Number(length) : null;
     const max = maxBytes(type);
     if (declared !== null && declared > max) {
       await res.body?.cancel();

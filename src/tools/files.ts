@@ -101,7 +101,9 @@ export const getFile = defineTool({
       ? `larger than ${fileSize(MAX_IMAGE_BYTES)}, too large to show`
       : TEXT_TYPES.test(type)
         ? `larger than ${fileSize(MAX_TEXT_BYTES)}, too long to show`
-        : 'not an image or text file, so it can’t be shown here';
+        : UNTYPED.includes(type) && !f.bytes
+          ? `no file type and larger than ${fileSize(MAX_IMAGE_BYTES)}, so it can’t be shown here`
+          : 'not an image or text file, so it can’t be shown here';
     return `${what}: ${why}. Open it in the app: ${ctx.appUrl.replace(/\/$/, '')}/api/files/${id}`;
   },
 });

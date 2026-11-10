@@ -114,6 +114,15 @@ describe('get_file', () => {
     expect(r.content[1]).toMatchObject({ type: 'image', mimeType: 'image/png' });
   });
 
+  it('a file without a type that is too large to look into says so', async () => {
+    const big = file({ name: 'blob', type: 'application/octet-stream', bytes: Buffer.alloc(MAX_IMAGE_BYTES + 1) });
+    const small = file({ name: 'tiny', type: 'application/octet-stream', bytes: Buffer.alloc(10) });
+    const c = await connect(fake);
+    expect((await c.call('get_file', { file: big.id })).text).toContain('no file type and larger than');
+    expect((await c.call('get_file', { file: small.id })).text).toContain('not an image or text file');
+    await c.close();
+  });
+
   it("a storage error behind S3's redirect is the storage's, not a refused key or missing access", async () => {
     const f = file({ name: 'shot.png', type: 'image/png', bytes: PNG, s3: true, s3Status: 401 });
     const c = await connect(fake);
