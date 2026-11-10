@@ -21,6 +21,11 @@ updates:
       # TypeScript 7 (the native compiler): not yet supported by openapi-typescript and typescript-eslint
       - dependency-name: typescript
         update-types: ['version-update:semver-major']
+      # the preset's 10.x needs conventional-changelog-writer 9; semantic-release's plugins (release-notes-generator,
+      # commit-analyzer) still load writer 8, and the release fails ("Missing helper"). Lift this once they move to 9
+      # (test/unit/release-notes.test.ts checks it).
+      - dependency-name: conventional-changelog-conventionalcommits
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
