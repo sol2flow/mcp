@@ -14,6 +14,7 @@ export type Label = S['Label'];
 export type Task = S['Task'];
 export type TaskSummary = S['TaskSummary'];
 export type TaskLink = S['TaskLink'];
+export type Attachment = S['Attachment'];
 export type ChecklistItem = S['ChecklistItem'];
 export type Comment = S['Comment'];
 export type TimeEntry = S['TimeEntry'];

@@ -55,6 +55,13 @@ describe(`contract with ${file}`, () => {
     it('send only parameters and body fields the API knows', async () => {
       clearCache();
       const c = await connect(fake);
+      const notes = {
+        id: '0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a60',
+        name: 'n.txt',
+        type: 'text/plain',
+        bytes: Buffer.from('n'),
+      };
+      fake.files.push({ ...notes, task_id: fake.tasks[1]!.id });
       const calls: [string, Record<string, unknown>][] = [
         ['whoami', {}],
         ['list_workspaces', {}],
@@ -78,6 +85,8 @@ describe(`contract with ${file}`, () => {
         ],
         ['list_tasks', { label: ['bug'] }],
         ['get_task', { task: 'PRD-2', comments: 3 }],
+        ['list_attachments', { task: 'PRD-2' }],
+        ['get_file', { file: notes.id }],
         ['list_labels', { board: 'PRD' }],
         ['list_labels', {}],
         ['list_people', { query: 'a', role: 'MEMBER' }],

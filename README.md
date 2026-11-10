@@ -64,7 +64,7 @@ Claude.ai and ChatGPT connectors need OAuth sign-in instead of a key; that comes
 
 ## Tools
 
-32 tools, named `verb_noun`. Read tools carry `readOnlyHint`; write tools say whether they are destructive and
+34 tools, named `verb_noun`. Read tools carry `readOnlyHint`; write tools say whether they are destructive and
 idempotent. Deleting is not offered: `archive_task` hides a task, `unarchive_task` brings it back.
 
 | Tool                      | What it does                                                                      | API requests    |
@@ -76,6 +76,8 @@ idempotent. Deleting is not offered: `archive_task` hides a task, `unarchive_tas
 | `search`                  | Boards and tasks by name, key or text (like ⌘K)                                   | 1 per workspace |
 | `list_tasks`              | Tasks filtered by board, list, assignee, label, text, due dates, last change      | 1–4             |
 | `get_task`                | A task in full: description, checklist, links, latest comments                    | 3               |
+| `list_attachments`        | A task's attachments (name, type, size, id)                                       | 1               |
+| `get_file`                | A file by id or URL: images as images (≤ 3 MB), text files as text (≤ 24 KB)      | 1–2             |
 | `list_labels`             | Labels of a board or workspace                                                    | 1               |
 | `list_people`             | Members of a workspace                                                            | 1               |
 | `list_time_entries`       | Logged time, by board, task, person and period                                    | 1–3             |

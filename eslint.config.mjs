@@ -12,7 +12,8 @@ const nodeGlobals = {
 };
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'src/api/openapi.d.ts'] },
+  // ._*: macOS metadata files, not source (gitignored)
+  { ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'src/api/openapi.d.ts', '**/._*'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

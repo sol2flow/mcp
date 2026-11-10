@@ -70,5 +70,12 @@ export function duration(sec: number): string {
 export const more = (next: string | null | undefined) =>
   next ? `\n\nMore results: call again with \`cursor: "${next}"\`.` : '';
 
+/** A file size: 512 B, 1.2 KB, 3.4 MB (1 KB = 1024 B). */
+export function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 /** One line per item, or the empty text. */
 export const lines = (items: string[], empty: string) => (items.length ? items.join('\n') : empty);

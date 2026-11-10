@@ -1,0 +1,3 @@
+# LF in every checkout, Windows included (whatever core.autocrlf says): Prettier checks for LF (.prettierrc.json
+# endOfLine), and the git hooks in .githooks are sh scripts that a CR at the end of each line breaks.
+* text=auto eol=lf

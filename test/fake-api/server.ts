@@ -85,6 +85,21 @@ export class FakeApi {
   boards: Board[] = [];
   tasks: Task[] = [];
   links: { id: string; from: string; to: string; kind: string }[] = [];
+  /**
+   * attachments (and description images, `inline`); `s3`: downloads answer 302 to /s3/<id>, like S3 storage, which
+   * answers `s3Status` instead when set (an expired signature); `chunked`: no Content-Length
+   */
+  files: {
+    id: string;
+    task_id: string;
+    name: string;
+    type: string;
+    bytes: Buffer;
+    inline?: boolean;
+    s3?: boolean;
+    s3Status?: number;
+    chunked?: boolean;
+  }[] = [];
   entries: {
     id: string;
     task_id: string;
@@ -301,6 +316,22 @@ export class FakeApi {
         status === 401 ? { 'WWW-Authenticate': 'Bearer realm="sol2flow"' } : {},
       );
 
+    // the "S3" behind a 302 from /files/{fileId}: a signed URL, so no key needed (and none should be sent)
+    const s3 = /^\/s3\/([^/]+)$/.exec(u.pathname);
+    if (s3) {
+      const f = this.files.find((x) => x.id === s3[1]);
+      if (!f) return reply(404, { error: { code: 'not_found', message: 'Not found.' } });
+      if (f.s3Status) {
+        res.writeHead(f.s3Status, { 'Content-Type': 'application/xml' });
+        return res.end('<Error><Code>AccessDenied</Code><Message>Request has expired</Message></Error>');
+      }
+      res.writeHead(200, {
+        'Content-Type': f.type,
+        ...(f.chunked ? {} : { 'Content-Length': String(f.bytes.length) }),
+      });
+      return res.end(f.bytes);
+    }
+
     const route = this.match(req.method!, path);
     const injected =
       this.inject.get(`${req.method} ${path}`) ??
@@ -326,6 +357,17 @@ export class FakeApi {
     const me = this.users[this.keyUser[auth]!]!;
     try {
       const out = route.run({ p: route.params, q: query, body, me, key: auth });
+      if (out && typeof out === 'object' && 'file' in out) {
+        const f = (out as { file: FakeApi['files'][number] }).file;
+        if (f.s3) return reply(302, undefined, { Location: `${this.url}/s3/${f.id}` });
+        res.writeHead(200, {
+          ...headers,
+          'Content-Type': f.type,
+          ...(f.chunked ? {} : { 'Content-Length': String(f.bytes.length) }),
+          'Content-Disposition': `attachment; filename="${f.name}"; filename*=UTF-8''${encodeURIComponent(f.name)}`,
+        });
+        return res.end(f.bytes);
+      }
       if (out && typeof out === 'object' && 'status' in out && 'data' in out)
         return reply(out.status as number, out.data);
       if (out === undefined) return reply(204);
@@ -672,6 +714,33 @@ export class FakeApi {
           t.assignees = body.user_ids;
           return this.full(t, false);
         },
+      },
+      {
+        method: 'GET',
+        template: '/tasks/{taskId}/attachments',
+        run: ({ p }) => {
+          this.findTask(p.taskId!);
+          return {
+            data: this.files
+              .filter((f) => f.task_id === p.taskId && !f.inline)
+              .map((f) => ({
+                id: f.id,
+                name: f.name,
+                size: f.bytes.length,
+                mime_type: f.type,
+                created_at: NOW,
+                download_url: `${this.url}/api/v1/files/${f.id}`,
+              })),
+            next_cursor: null,
+          };
+        },
+      },
+      {
+        method: 'GET',
+        template: '/files/{fileId}',
+        run: ({ p }) => ({
+          file: this.files.find((f) => f.id === p.fileId) ?? this.fail(404, 'not_found', 'Not found.'),
+        }),
       },
       {
         method: 'GET',

@@ -23,7 +23,7 @@ const description = z
   .string()
   .max(20_000)
   .describe(
-    'Markdown (GFM). Mentions: @[Name](user:<user id>). Raw HTML stays text; links only http(s), mailto or relative',
+    'Markdown (GFM); a ```mermaid code block shows as a diagram. Mentions: @[Name](user:<user id>). Raw HTML stays text; links only http(s), mailto or relative',
   );
 const estimate = z
   .string()

@@ -173,7 +173,7 @@ describe('read tools', () => {
     expect(t).toContain('Top **level** comment');
     expect(t).toMatch(/\n {2}- Ada Admin, [^\n]+\n {4}A reply/); // the reply, indented under its comment
     expect(t).toContain('Please look @[Ada Admin]');
-    expect(t).toContain('_1 attachment(s): open the task in the app._');
+    expect(t).toContain('_1 attachment(s): list_attachments shows them._');
     expect(await s.ok('get_task', { task: 'FL-3', workspace: ws })).toContain(
       `- relates to **RR-1** Secret plan ${w.run}`,
     );
@@ -600,7 +600,7 @@ describe('prompts', () => {
 describe('coverage', () => {
   it('every tool was called', () => {
     expect(TOOLS.map((t) => t.name).filter((n) => !used.has(n))).toEqual([]);
-    expect(TOOLS).toHaveLength(32);
+    expect(TOOLS).toHaveLength(34);
   });
 });
 

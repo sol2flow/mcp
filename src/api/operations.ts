@@ -17,6 +17,8 @@ export const OPS = {
   listTasks: { method: 'GET', path: '/tasks' },
   createTask: { method: 'POST', path: '/tasks' },
   getTask: { method: 'GET', path: '/tasks/{taskId}' },
+  listAttachments: { method: 'GET', path: '/tasks/{taskId}/attachments' },
+  downloadFile: { method: 'GET', path: '/files/{fileId}' },
   updateTask: { method: 'PATCH', path: '/tasks/{taskId}' },
   moveTask: { method: 'POST', path: '/tasks/{taskId}/move' },
   moveTaskToBoard: { method: 'POST', path: '/tasks/{taskId}/move-board' },
