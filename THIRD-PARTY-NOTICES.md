@@ -6,7 +6,7 @@ The sol2flow MCP server (MIT, see LICENSE) bundles the following packages. Gener
 ## Bundled into dist/index.js (npm package and image)
 
 - @hono/node-server 2.1.3 (MIT)
-- @modelcontextprotocol/sdk 1.31.0 (MIT)
+- @modelcontextprotocol/sdk 1.32.1 (MIT)
 - @pinojs/redact 0.4.0 (MIT)
 - ajv 8.20.0 (MIT)
 - ajv-formats 3.0.1 (MIT)
@@ -17,13 +17,13 @@ The sol2flow MCP server (MIT, see LICENSE) bundles the following packages. Gener
 - hono 4.13.12 (MIT)
 - json-schema-traverse 1.0.0 (MIT)
 - on-exit-leak-free 2.1.2 (MIT)
-- pino 10.3.1 (MIT)
+- pino 10.4.0 (MIT)
 - pino-std-serializers 7.1.0 (MIT)
 - quick-format-unescaped 4.0.4 (MIT)
 - safe-stable-stringify 2.5.0 (MIT)
 - sonic-boom 4.2.1 (MIT)
 - thread-stream 4.2.0 (MIT)
-- zod 4.6.5 (MIT)
+- zod 4.6.7 (MIT)
 - zod-to-json-schema 3.25.2 (ISC)
 
 ### @hono/node-server 2.1.3
@@ -54,7 +54,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @modelcontextprotocol/sdk 1.31.0
+### @modelcontextprotocol/sdk 1.32.1
 
 License: MIT · https://modelcontextprotocol.io
 
@@ -372,14 +372,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### pino 10.3.1
+### pino 10.4.0
 
 License: MIT · https://getpino.io
 
 ```text
 The MIT License (MIT)
 
-Copyright (c) 2016-2025 Matteo Collina, David Mark Clements and the Pino contributors listed at <https://github.com/pinojs/pino#the-team> and in the README file.
+Copyright (c) 2016-present Matteo Collina, David Mark Clements and the Pino contributors listed at <https://github.com/pinojs/pino#the-team> and in the README file.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -526,7 +526,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### zod 4.6.5
+### zod 4.6.7
 
 License: MIT · https://zod.dev
 
@@ -579,12 +579,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ## Bundled into dist/sentry-sdk.js (image only)
 
 - @opentelemetry/api 1.9.1 (Apache-2.0)
-- @sentry/conventions 0.25.0 (MIT)
-- @sentry/core 11.3.0 (MIT)
-- @sentry/node 11.3.0 (MIT)
-- @sentry/opentelemetry 11.3.0 (MIT)
-- @sentry/server-runtime-injection 11.3.0 (MIT)
-- @sentry/server-utils 11.3.0 (MIT)
+- @sentry/conventions 0.29.0 (MIT)
+- @sentry/core 11.10.0 (MIT)
+- @sentry/node 11.10.0 (MIT)
+- @sentry/opentelemetry 11.10.0 (MIT)
+- @sentry/server-runtime-injection 11.10.0 (MIT)
+- @sentry/server-utils 11.10.0 (MIT)
 
 ### @opentelemetry/api 1.9.1
 
@@ -794,7 +794,7 @@ Apache License
    limitations under the License.
 ```
 
-### @sentry/conventions 0.25.0
+### @sentry/conventions 0.29.0
 
 License: MIT · https://github.com/getsentry/sentry-conventions#readme
 
@@ -822,7 +822,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @sentry/core 11.3.0
+### @sentry/core 11.10.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/core
 
@@ -850,7 +850,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @sentry/node 11.3.0
+### @sentry/node 11.10.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/node
 
@@ -876,9 +876,18 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Third-Party Dependency Notice
+
+The MIT License above applies to the code in this package. This package has
+the Sentry CLI (the `sentry` package on npm, https://github.com/getsentry/cli)
+as a direct or transitive dependency. The Sentry CLI is not part of this package
+and is not covered by the MIT License above. It is licensed under the
+Functional Source License, Version 1.1, Apache 2.0 Future License
+(FSL-1.1-Apache-2.0): https://github.com/getsentry/cli/blob/main/LICENSE.md
 ```
 
-### @sentry/opentelemetry 11.3.0
+### @sentry/opentelemetry 11.10.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/opentelemetry
 
@@ -906,10 +915,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @sentry/server-runtime-injection 11.3.0
+### @sentry/server-runtime-injection 11.10.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/server-runtime-injection
 
-### @sentry/server-utils 11.3.0
+### @sentry/server-utils 11.10.0
 
 License: MIT · https://github.com/getsentry/sentry-javascript/tree/master/packages/server-utils
