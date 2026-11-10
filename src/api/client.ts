@@ -135,7 +135,7 @@ export class ApiClient {
       this.o.onCall?.({ op, method, status: res.status, ms: Date.now() - started, attempt });
       if (res.status === 204) return undefined as T;
       const text = await res.text().catch(() => '');
-      let body: unknown = null;
+      let body: unknown;
       try {
         body = text ? JSON.parse(text) : null;
       } catch {

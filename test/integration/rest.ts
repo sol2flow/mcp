@@ -23,7 +23,7 @@ export function rest(key: string, extraHeaders: Record<string, string> = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await r.text();
-    let data: unknown = null;
+    let data: unknown;
     try {
       data = text ? JSON.parse(text) : null;
     } catch {
